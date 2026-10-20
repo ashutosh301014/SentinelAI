@@ -1,0 +1,125 @@
+{
+  "services": [
+    {
+      "id": "api_gateway",
+      "name": "API Gateway",
+      "anomaly_score": 0.02,
+      "incident_probability": 0.01,
+      "error_rate": 0.004,
+      "latency_change": 1.05,
+      "service_criticality": 5.0,
+      "current_health": 98.0
+    },
+    {
+      "id": "authentication",
+      "name": "Authentication",
+      "anomaly_score": 0.03,
+      "incident_probability": 0.02,
+      "error_rate": 0.002,
+      "latency_change": 1.1,
+      "service_criticality": 4.5,
+      "current_health": 96.0
+    },
+    {
+      "id": "orders",
+      "name": "Orders",
+      "anomaly_score": 0.05,
+      "incident_probability": 0.03,
+      "error_rate": 0.008,
+      "latency_change": 1.15,
+      "service_criticality": 5.0,
+      "current_health": 95.0
+    },
+    {
+      "id": "payments",
+      "name": "Payments",
+      "anomaly_score": 0.04,
+      "incident_probability": 0.02,
+      "error_rate": 0.003,
+      "latency_change": 1.08,
+      "service_criticality": 5.0,
+      "current_health": 97.0
+    },
+    {
+      "id": "inventory",
+      "name": "Inventory",
+      "anomaly_score": 0.01,
+      "incident_probability": 0.01,
+      "error_rate": 0.001,
+      "latency_change": 1.02,
+      "service_criticality": 3.5,
+      "current_health": 99.0
+    },
+    {
+      "id": "database",
+      "name": "Database",
+      "anomaly_score": 0.06,
+      "incident_probability": 0.04,
+      "error_rate": 0.01,
+      "latency_change": 1.2,
+      "service_criticality": 5.0,
+      "current_health": 93.0
+    },
+    {
+      "id": "notification",
+      "name": "Notification",
+      "anomaly_score": 0.0,
+      "incident_probability": 0.0,
+      "error_rate": 0.0,
+      "latency_change": 1.0,
+      "service_criticality": 2.0,
+      "current_health": 100.0
+    }
+  ],
+  "dependencies": [
+    {
+      "source": "api_gateway",
+      "target": "authentication",
+      "dependency_strength": 0.7,
+      "historical_propagation_factor": 0.55,
+      "latency_sensitivity": 0.8
+    },
+    {
+      "source": "api_gateway",
+      "target": "orders",
+      "dependency_strength": 0.9,
+      "historical_propagation_factor": 0.75,
+      "latency_sensitivity": 0.7
+    },
+    {
+      "source": "orders",
+      "target": "payments",
+      "dependency_strength": 0.95,
+      "historical_propagation_factor": 0.8,
+      "latency_sensitivity": 0.6
+    },
+    {
+      "source": "orders",
+      "target": "inventory",
+      "dependency_strength": 0.8,
+      "historical_propagation_factor": 0.6,
+      "latency_sensitivity": 0.5
+    },
+    {
+      "source": "payments",
+      "target": "database",
+      "dependency_strength": 0.9,
+      "historical_propagation_factor": 0.85,
+      "latency_sensitivity": 0.9
+    },
+    {
+      "source": "inventory",
+      "target": "database",
+      "dependency_strength": 0.75,
+      "historical_propagation_factor": 0.7,
+      "latency_sensitivity": 0.8
+    },
+    {
+      "source": "orders",
+      "target": "notification",
+      "dependency_strength": 0.3,
+      "historical_propagation_factor": 0.2,
+      "latency_sensitivity": 0.1
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-10-19T21:11:21.595711+00:00",
+  "old_split": {
+    "file": "model_comparison_random_split.csv",
+    "strategy": "random stratified train_test_split(test_size=0.2, random_state=42)",
+    "train_rows": 460048,
+    "test_rows": 115013,
+    "known_overlap_issue": "114,968 of 115,013 test rows shared an exact feature vector with the training set"
+  },
+  "new_split": {
+    "file": "model_comparison.csv",
+    "strategy": "grouped StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42) over deterministic SHA-256 feature-vector group IDs; test partition = fold 0",
+    "train_rows": 271286,
+    "test_rows": 303775,
+    "exact_vector_overlap_train_test": 0
+  }
+}

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="SentinelAI - Predictive AIOps engine: incident detection, composite risk scoring, root-cause evidence, blast radius and what-if recovery simulation.">
+  <title>SentinelAI &mdash; Predictive AIOps Dashboard</title>
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+  <div id="backend-banner" class="backend-banner" role="alert" hidden>
+    <span class="banner-dot"></span>
+    <span>Backend unavailable</span>
+    <span class="banner-hint">Showing no results until the API is reachable again.</span>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2 L20 7 L20 17 L12 22 L4 17 L4 7 Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="12" cy="12.5" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M12 9.3 L12 12.5 L14.4 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <div class="brand-text">
+        <h1>SentinelAI</h1>
+        <p>Predictive AIOps Engine</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="health-pill" class="pill pill-neutral" title="API health">API &middot; checking</span>
+      <span id="model-pill" class="pill pill-neutral" title="Loaded model version">model &middot; -</span>
+      <span id="clock" class="clock" aria-label="local time">--:--:--</span>
+    </div>
+  </header>
+
+  <div class="actionbar">
+    <button id="btn-normal" class="btn btn-outline" type="button" disabled>
+      Analyze Normal Trace
+    </button>
+    <button id="btn-incident" class="btn btn-primary" type="button" disabled>
+      Simulate Incident
+    </button>
+    <span class="actionbar-note" id="actionbar-note">
+      Runs the persisted held-out traces through the full 10-stage production pipeline.
+    </span>
+  </div>
+
+  <main class="grid">
+
+    <section class="panel span-3" id="panel-system">
+      <h2 class="panel-title">System Health</h2>
+      <dl class="kv">
+        <div class="kv-row"><dt>API status</dt><dd><span id="sys-status" class="value">&mdash;</span></dd></div>
+        <div class="kv-row"><dt>App</dt><dd id="sys-app" class="value">&mdash;</dd></div>
+        <div class="kv-row"><dt>Version</dt><dd id="sys-version" class="value">&mdash;</dd></div>
+        <div class="kv-row"><dt>Dataset</dt><dd id="sys-dataset" class="value">&mdash;</dd></div>
+        <div class="kv-row"><dt>Model loaded</dt><dd id="sys-model-loaded" class="value">&mdash;</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel span-3" id="panel-model">
+      <h2 class="panel-title">Model Status</h2>
+      <dl class="kv">
+        <div class="kv-row"><dt>Selected model</dt><dd id="model-name" class="value mono">&mdash;</dd></div>
+        <div class="kv-row"><dt>Model version</dt><dd id="model-version" class="value mono">&mdash;</dd></div>
+        <div class="kv-row"><dt>Threshold</dt><dd id="model-threshold" class="value mono">&mdash;</dd></div>
+        <div class="kv-row"><dt>Features</dt><dd id="model-features" class="value mono">&mdash;</dd></div>
+        <div class="kv-row"><dt>Trained at</dt><dd id="model-trained" class="value">&mdash;</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel span-6" id="panel-risk">
+      <h2 class="panel-title">Current Incident Risk</h2>
+      <div class="risk-layout">
+        <div class="gauge-wrap">
+          <div id="risk-gauge" class="gauge gauge-idle">
+            <div class="gauge-inner">
+              <span id="risk-score" class="gauge-score">&mdash;</span>
+              <span class="gauge-max">/ 100</span>
+            </div>
+          </div>
+          <span id="risk-severity" class="severity severity-idle">&mdash;</span>
+        </div>
+        <div class="risk-details">
+          <div id="risk-contributions" class="contributions">
+            <div class="contrib">
+              <span class="contrib-label">Classifier</span>
+              <div class="contrib-track"><div id="contrib-classifier" class="contrib-fill"></div></div>
+              <span id="contrib-classifier-val" class="contrib-val">&mdash;</span>
+            </div>
+            <div class="contrib">
+              <span class="contrib-label">Anomaly detector</span>
+              <div class="contrib-track"><div id="contrib-anomaly_detector" class="contrib-fill"></div></div>
+              <span id="contrib-anomaly_detector-val" class="contrib-val">&mdash;</span>
+            </div>
+            <div class="contrib">
+              <span class="contrib-label">Event irregularity</span>
+              <div class="contrib-track"><div id="contrib-event_irregularity" class="contrib-fill"></div></div>
+              <span id="contrib-event_irregularity-val" class="contrib-val">&mdash;</span>
+            </div>
+            <div class="contrib">
+              <span class="contrib-label">Event intensity</span>
+              <div class="contrib-track"><div id="contrib-event_intensity" class="contrib-fill"></div></div>
+              <span id="contrib-event_intensity-val" class="contrib-val">&mdash;</span>
+            </div>
+          </div>
+          <p class="meta-line">Trace <span id="risk-block" class="mono">&mdash;</span></p>
+          <p id="risk-caveat" class="caveat">&mdash;</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel span-3" id="panel-prob">
+      <h2 class="panel-title">Supervised Anomaly Probability</h2>
+      <p id="prob-value" class="big-value">&mdash;</p>
+      <div class="meter"><div id="prob-bar" class="meter-fill"></div></div>
+      <p class="meta-line">HistGradientBoosting prediction</p>
+    </section>
+
+    <section class="panel span-3" id="panel-if">
+      <h2 class="panel-title">Isolation Forest Score</h2>
+      <p id="if-value" class="big-value">&mdash;</p>
+      <div class="meter"><div id="if-bar" class="meter-fill"></div></div>
+      <p class="meta-line">0 = normal &middot; 1 = anomalous</p>
+    </section>
+
+    <section class="panel span-6" id="panel-evidence">
+      <h2 class="panel-title">Top Evidence</h2>
+      <ul id="evidence-list" class="list">
+        <li class="placeholder">&mdash;</li>
+      </ul>
+    </section>
+
+    <section class="panel span-6" id="panel-cause">
+      <h2 class="panel-title">Probable Cause</h2>
+      <div class="cause-head">
+        <span id="cause-component" class="chip">&mdash;</span>
+        <span class="meta-line">Root-Cause Evidence &mdash; not a confirmed root cause</span>
+      </div>
+      <p id="cause-text" class="cause-text">&mdash;</p>
+      <div id="cause-events" class="chip-row"></div>
+    </section>
+
+    <section class="panel span-6" id="panel-recs">
+      <h2 class="panel-title">Investigation Recommendations</h2>
+      <ol id="recs-list" class="list">
+        <li class="placeholder">&mdash;</li>
+      </ol>
+    </section>
+
+    <section class="panel span-6" id="panel-graph">
+      <h2 class="panel-title">Service Dependency Graph</h2>
+      <p class="meta-line">Edge <span class="mono">A &rarr; B</span> = A depends on B &middot; node color = current health</p>
+      <svg id="graph-svg" class="graph-svg" viewBox="0 0 760 360" role="img" aria-label="Service dependency graph"></svg>
+      <div class="graph-legend">
+        <span class="legend-item"><i class="dot dot-ok"></i>healthy</span>
+        <span class="legend-item"><i class="dot dot-warn"></i>degraded</span>
+        <span class="legend-item"><i class="dot dot-crit"></i>critical</span>
+        <span class="legend-item"><i class="dot dot-origin"></i>incident origin</span>
+        <span class="legend-item"><i class="dot dot-risk"></i>at risk</span>
+      </div>
+    </section>
+
+    <section class="panel span-6" id="panel-blast">
+      <h2 class="panel-title">Predicted Blast Radius</h2>
+      <p class="meta-line">Estimated Propagation Risk &mdash; not a calibrated failure probability</p>
+      <dl class="kv">
+        <div class="kv-row"><dt>Status</dt><dd id="blast-status" class="value">&mdash;</dd></div>
+        <div class="kv-row"><dt>Probable origin</dt><dd id="blast-origin" class="value">&mdash;</dd></div>
+        <div class="kv-row"><dt>Origin incident risk</dt><dd id="blast-origin-risk" class="value">&mdash;</dd></div>
+        <div class="kv-row"><dt>Highest risk service</dt><dd id="blast-highest" class="value">&mdash;</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel span-6" id="panel-path">
+      <h2 class="panel-title">Most Likely Propagation Path</h2>
+      <div id="path-flow" class="path-flow"><span class="placeholder">&mdash;</span></div>
+    </section>
+
+    <section class="panel span-6" id="panel-atrisk">
+      <h2 class="panel-title">Services At Risk</h2>
+      <div id="atrisk-grid" class="atrisk-grid"><span class="placeholder">&mdash;</span></div>
+    </section>
+
+    <section class="panel span-12" id="panel-whatif">
+      <h2 class="panel-title">What-If Recovery Simulator</h2>
+      <p class="meta-line">Estimated Counterfactual Impact &mdash; never a guaranteed recovery</p>
+      <div class="sim-controls">
+        <label class="field">
+          <span class="field-label">Service</span>
+          <select id="sim-service" disabled>
+            <option value="">&mdash; waiting for graph &mdash;</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="field-label">Action</span>
+          <select id="sim-action" disabled>
+            <option value="restart_service">Restart Service</option>
+            <option value="reduce_error_rate">Reduce Error Rate</option>
+            <option value="reduce_latency">Reduce Latency</option>
+            <option value="improve_service_health">Improve Service Health</option>
+            <option value="increase_database_capacity">Increase Database Capacity</option>
+            <option value="isolate_noncritical_service">Isolate Non-Critical Service</option>
+          </select>
+        </label>
+        <button id="btn-simulate" class="btn btn-primary" type="button" disabled>
+          Run What-If Simulation
+        </button>
+      </div>
+      <div id="sim-results" class="sim-results" hidden>
+        <div class="sim-compare">
+          <div class="sim-col">
+            <span class="sim-label">Before</span>
+            <div class="sim-bar-track"><div id="sim-before-bar" class="sim-bar sim-before"></div></div>
+            <span id="sim-before" class="sim-value">&mdash;</span>
+          </div>
+          <div class="sim-col">
+            <span class="sim-label">After</span>
+            <div class="sim-bar-track"><div id="sim-after-bar" class="sim-bar sim-after"></div></div>
+            <span id="sim-after" class="sim-value">&mdash;</span>
+          </div>
+        </div>
+        <dl class="kv sim-kv">
+          <div class="kv-row"><dt>Estimated risk reduction</dt><dd id="sim-reduction" class="value">&mdash;</dd></div>
+          <div class="kv-row"><dt>Services at risk (before / after)</dt><dd id="sim-services" class="value">&mdash;</dd></div>
+          <div class="kv-row"><dt>Changed propagation paths</dt><dd id="sim-changes" class="value">&mdash;</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="panel span-12" id="panel-metrics">
+      <h2 class="panel-title">Actual ML Model Metrics</h2>
+      <p class="meta-line">Held-out evaluation recorded at training time &mdash; served from models/metadata.json, never recomputed on the fly</p>
+      <div id="metric-tiles" class="metric-tiles"></div>
+      <div class="metrics-sub">
+        <div class="sub-box">
+          <h3>Confusion matrix (held-out)</h3>
+          <div id="metric-confusion" class="confusion"></div>
+        </div>
+        <div class="sub-box">
+          <h3>Anomaly detector (Isolation Forest)</h3>
+          <div id="ad-metrics" class="kv"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>All predictions are computed live by the SentinelAI inference pipeline &mdash; nothing on this page is a hardcoded result.</p>
+    <p>Terminology: &ldquo;Estimated Propagation Risk&rdquo; and &ldquo;Estimated Counterfactual Impact&rdquo; are model estimates, never guarantees. &ldquo;Probable Cause&rdquo; is root-cause evidence, never a confirmed root cause.</p>
+  </footer>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

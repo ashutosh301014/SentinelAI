@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: sentinelai
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: SENTINELAI_DEBUG
+        value: "false"

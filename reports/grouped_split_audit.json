@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-10-20T08:00:15.940992+00:00",
+  "dataset": "HDFS_v1",
+  "split": {
+    "strategy": "StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42) over deterministic SHA-256 group IDs of the complete feature vector; test partition = fold 0",
+    "guarantee": "all rows sharing one exact feature vector belong to exactly one partition; train/test exact-vector overlap is hard-checked to be 0",
+    "train_rows": 271286,
+    "test_rows": 303775,
+    "train_anomalies": 13471,
+    "test_anomalies": 3367,
+    "train_anomaly_rate": 0.049656,
+    "test_anomaly_rate": 0.011084,
+    "train_vector_groups": 495,
+    "test_vector_groups": 94,
+    "exact_vector_overlap_train_test": 0
+  },
+  "group_statistics": {
+    "total_rows": 575061,
+    "unique_vectors": 589,
+    "duplicated_vectors": 385,
+    "duplicate_rows": 574472,
+    "conflicting_label_vectors": 9,
+    "conflicting_label_rows": 550
+  },
+  "conflicting_labels": {
+    "policy": "reported, never silently resolved: whole vector groups are kept intact inside one partition; StratifiedGroupKFold assigns mixed-label groups first and accounts for their label distribution"
+  }
+}

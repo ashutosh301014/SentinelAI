@@ -1,0 +1,31 @@
+{
+  "description": "Data-driven mapping from probable HDFS components (incident-engine output) to services in the dependency topology. First keyword match on the component string wins. Used by the production inference pipeline's Dependency Graph Mapping stage; no mapping logic is hardcoded in source.",
+  "mapping": [
+    {
+      "component": "NameNode (FSNamesystem/BlockManager)",
+      "keywords": ["namesystem", "blockmanager", "volumemap", "replication", "allocateblock"],
+      "service_id": "database",
+      "rationale": "HDFS metadata management is the system's central state authority; it maps to the database service."
+    },
+    {
+      "component": "NameNode (client request serving)",
+      "keywords": ["client request serving", "served block"],
+      "service_id": "api_gateway",
+      "rationale": "Client-facing request serving maps to the API entry point."
+    },
+    {
+      "component": "DataNode (block pipeline)",
+      "keywords": ["block pipeline", "packet", "receiving block", "received block", "write", "transmit", "transfer", "reopen block", "deleting block"],
+      "service_id": "inventory",
+      "rationale": "Block storage and transfer maps to the inventory/storage service."
+    },
+    {
+      "component": "DataNode (BlockScanner)",
+      "keywords": ["blockscanner", "verification"],
+      "service_id": "inventory",
+      "rationale": "Background block verification runs on the storage service."
+    }
+  ],
+  "unmapped_fallback": "highest_criticality",
+  "unmapped_fallback_rationale": "When the probable component matches no rule, the incident is attributed to the highest-criticality service in the topology (data-driven from the graph, not hardcoded)."
+}

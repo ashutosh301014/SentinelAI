@@ -1,0 +1,55 @@
+{
+  "description": "Production-safe demo inputs for SentinelAI: two one-row event matrices selected from the HELD-OUT test split (never used for training). Intended labels are ground-truth labels (anomaly_label.csv) recorded for evaluation only \u2014 the inference pipeline never sees them and all predictions are computed live from the trained models.",
+  "dataset": "HDFS_v1",
+  "dataset_source": "Loghub HDFS_v1 (Zenodo record 8196385)",
+  "split": {
+    "name": "test",
+    "strategy": "grouped: StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42) over deterministic SHA-256 group IDs of the complete feature vector; test partition = fold 0",
+    "guarantee": "no exact feature vector appears in both train and test (overlap hard-checked to 0)",
+    "vector_overlap_train_test": 0,
+    "train_rows": 271286,
+    "test_rows": 303775
+  },
+  "selection": {
+    "method": "candidates scored with the already-trained artifacts (loaded read-only, NO retraining); normal = lowest composite risk among held-out rows the classifier predicts normal; anomalous = highest composite risk among held-out rows the classifier predicts anomalous, additionally required to show HIGH/CRITICAL risk, evidence phrases and a non-empty blast radius",
+    "model_version": "2.0.0",
+    "normal_candidates_scanned": 500,
+    "anomaly_candidates_scanned": 200
+  },
+  "samples": [
+    {
+      "role": "representative_normal",
+      "file": "demo_normal_block.csv",
+      "block_id": "blk_-4898747391262002624",
+      "intended_label": 0,
+      "intended_label_name": "Normal",
+      "ground_truth_source": "anomaly_label.csv (Label column)",
+      "held_out": true,
+      "selection_stats": {
+        "classifier_probability": 7.779769475746434e-06,
+        "anomaly_score": 0.4489914169247113,
+        "risk_score": 19,
+        "severity": "LOW"
+      }
+    },
+    {
+      "role": "representative_anomalous",
+      "file": "demo_anomalous_block.csv",
+      "block_id": "blk_7536693147882198965",
+      "intended_label": 1,
+      "intended_label_name": "Anomaly",
+      "ground_truth_source": "anomaly_label.csv (Label column)",
+      "held_out": true,
+      "selection_stats": {
+        "classifier_probability": 0.9999784231185913,
+        "anomaly_score": 0.8765334438591357,
+        "risk_score": 84,
+        "severity": "CRITICAL",
+        "mapped_service": "api_gateway",
+        "blast_radius_services_at_risk": 6,
+        "top_evidence_count": 5
+      }
+    }
+  ],
+  "selected_at": "2026-10-19T21:13:41.582973+00:00"
+}

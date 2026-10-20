@@ -1,0 +1,19 @@
+{
+  "incident_id": "INC-blk_-4898747391262002624",
+  "timestamp": null,
+  "anomaly_detected": false,
+  "classifier_probability": 7.779769475746434e-06,
+  "anomaly_score": 0.4489914169247113,
+  "risk_score": 19,
+  "severity": "LOW",
+  "top_evidence": [
+    "all event frequencies within normal range",
+    "typical event pattern"
+  ],
+  "probable_contributing_events": [],
+  "probable_component": "none (no anomaly detected)",
+  "probable_cause": "Probable Cause: none identified \u2014 no anomalous evidence observed (normal operation).",
+  "investigation_recommendations": [
+    "No investigation required \u2014 archive this trace to extend the normal-behavior baseline."
+  ]
+}

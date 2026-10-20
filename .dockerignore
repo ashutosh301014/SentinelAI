@@ -1,0 +1,24 @@
+# --- virtual environments & caches ---
+venv/
+.venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# --- raw HDFS dataset & derived data (training-only, never in the image) ---
+data/raw/
+data/processed/
+
+# --- training/reporting/QA artifacts not needed at runtime ---
+reports/
+scripts/
+tests/
+
+# --- VCS & editor temp files ---
+.git/
+.gitignore
+*.log
+*.tmp
+*.bak
+*~
+.DS_Store

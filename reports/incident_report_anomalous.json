@@ -1,0 +1,40 @@
+{
+  "incident_id": "INC-blk_6953244271524304815",
+  "timestamp": null,
+  "anomaly_detected": true,
+  "classifier_probability": 0.9999997615814209,
+  "anomaly_score": 0.8778981463785202,
+  "risk_score": 83,
+  "severity": "CRITICAL",
+  "top_evidence": [
+    "E5 abnormal frequency",
+    "E21 abnormal frequency",
+    "E26 abnormal frequency",
+    "unusually many distinct event types",
+    "E6 abnormal frequency"
+  ],
+  "probable_contributing_events": [
+    {
+      "event_id": "E20",
+      "template": "[*]Unexpected error trying to delete block[*]BlockInfo not found in volumeMap[*]",
+      "contribution": 4.55386209487915
+    },
+    {
+      "event_id": "E4",
+      "template": "[*]Got exception while serving[*]to[*]",
+      "contribution": 1.9781560897827148
+    },
+    {
+      "event_id": "E3",
+      "template": "[*]Served block[*]to[*]",
+      "contribution": 0.6327343583106995
+    }
+  ],
+  "probable_component": "NameNode (FSNamesystem/BlockManager)",
+  "probable_cause": "Probable Cause: E5 abnormal frequency; E21 abnormal frequency; E26 abnormal frequency. Root-Cause Evidence: probable contributing event E20 ([*]Unexpected error trying to delete block[*]BlockInfo not found in volumeMap[*]).",
+  "investigation_recommendations": [
+    "Inspect NameNode (FSNamesystem/BlockManager) logs for '[*]Unexpected error trying to delete block[*]BlockInfo not found in volumeMap[*]' occurrences in the incident window (probable contributing event E20).",
+    "Inspect NameNode (client request serving) logs for '[*]Got exception while serving[*]to[*]' occurrences in the incident window (probable contributing event E4).",
+    "Inspect NameNode (client request serving) logs for '[*]Served block[*]to[*]' occurrences in the incident window (probable contributing event E3)."
+  ]
+}
