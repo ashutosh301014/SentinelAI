@@ -734,7 +734,480 @@ function renderAnalysis(result) {
   renderBlast(result);
   populateSimulator();
 }
+/* ---------------- live service monitor ---------------- */
 
+const MONITOR_STORAGE_KEY = "sentinelai.monitoredServices.v1";
+const MAX_MONITORED_SERVICES = 10;
+
+let monitoredServices = [];
+
+function loadMonitoredServices() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(MONITOR_STORAGE_KEY) || "[]");
+
+    monitoredServices = Array.isArray(saved)
+      ? saved.filter(
+          (item) =>
+            item &&
+            typeof item.id === "string" &&
+            typeof item.name === "string" &&
+            typeof item.url === "string"
+        )
+      : [];
+  } catch (_) {
+    monitoredServices = [];
+  }
+}
+
+function saveMonitoredServices() {
+  localStorage.setItem(
+    MONITOR_STORAGE_KEY,
+    JSON.stringify(monitoredServices)
+  );
+}
+
+function monitorStatusClass(status) {
+  if (status === "healthy") return "low";
+  if (status === "degraded") return "medium";
+  if (status === "down") return "critical";
+  return "idle";
+}
+
+function formatMonitorTime(value) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date.toLocaleTimeString();
+}
+
+function renderMonitoredServices() {
+  const grid = $("monitor-grid");
+  const empty = $("monitor-empty");
+
+  grid.textContent = "";
+  empty.hidden = monitoredServices.length > 0;
+
+  for (const service of monitoredServices) {
+    const card = document.createElement("div");
+    card.className = "atrisk-card";
+
+    const name = document.createElement("div");
+    name.className = "name";
+    name.textContent = service.name;
+
+    const url = document.createElement("div");
+    url.className = "meta-line";
+    url.style.wordBreak = "break-all";
+    url.textContent = service.url;
+
+    const statusRow = document.createElement("div");
+    statusRow.className = "risk-line";
+    statusRow.style.marginTop = "12px";
+
+    const statusText = document.createElement("span");
+    statusText.className = "risk-val";
+
+    if (service.checking) {
+      statusText.textContent = "Checking...";
+    } else {
+      statusText.textContent =
+        service.status === "healthy"
+          ? "Operational"
+          : service.status === "degraded"
+            ? "Degraded"
+            : service.status === "down"
+              ? "Unavailable"
+              : "Not checked";
+    }
+
+    const tag = document.createElement("span");
+    tag.className =
+      `risk-tag severity-${monitorStatusClass(service.status)}`;
+
+    tag.textContent = service.checking
+      ? "CHECKING"
+      : (service.status || "UNKNOWN").toUpperCase();
+
+    statusRow.append(statusText, tag);
+
+    const details = document.createElement("div");
+    details.className = "meta-line";
+    details.style.marginTop = "12px";
+
+    const httpStatus =
+      service.http_status !== null &&
+      service.http_status !== undefined
+        ? service.http_status
+        : "—";
+
+    const latency =
+      typeof service.latency_ms === "number"
+        ? `${service.latency_ms.toFixed(2)} ms`
+        : "—";
+
+    details.textContent =
+      `HTTP ${httpStatus} · ${latency} · Last checked ${formatMonitorTime(
+        service.checked_at
+      )}`;
+
+    const error = document.createElement("div");
+    error.className = "meta-line";
+    error.style.marginTop = "8px";
+    error.textContent = service.error
+      ? `Error: ${service.error}`
+      : "";
+
+    const actions = document.createElement("div");
+    actions.style.display = "flex";
+    actions.style.gap = "8px";
+    actions.style.flexWrap = "wrap";
+    actions.style.marginTop = "14px";
+
+    const checkButton = document.createElement("button");
+    checkButton.className = "btn btn-outline";
+    checkButton.type = "button";
+    checkButton.dataset.action = "check";
+    checkButton.dataset.id = service.id;
+    checkButton.textContent = service.checking
+      ? "Checking..."
+      : "Check Now";
+    checkButton.disabled = Boolean(service.checking);
+      const detailsButton = document.createElement("button");
+    detailsButton.className = "btn btn-outline";
+    detailsButton.type = "button";
+    detailsButton.dataset.action = "details";
+    detailsButton.dataset.id = service.id;
+    detailsButton.textContent = "View Full Details";
+    const removeButton = document.createElement("button");
+    removeButton.className = "btn btn-outline";
+    removeButton.type = "button";
+    removeButton.dataset.action = "remove";
+    removeButton.dataset.id = service.id;
+    removeButton.textContent = "Remove";
+
+    actions.append(
+    checkButton,
+    detailsButton,
+    removeButton
+);
+
+    card.append(
+      name,
+      url,
+      statusRow,
+      details,
+      error,
+      actions
+    );
+
+    grid.append(card);
+  }
+}
+
+async function checkMonitoredService(id) {
+  const service = monitoredServices.find(
+    (item) => item.id === id
+  );
+
+  if (!service || service.checking) return;
+
+  service.checking = true;
+  renderMonitoredServices();
+
+  try {
+    const result = await apiFetch(
+      `${API}/service-monitor/check`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          name: service.name,
+          url: service.url,
+        }),
+      }
+    );
+
+    service.status = result.status;
+    service.http_status = result.http_status;
+    service.latency_ms = result.latency_ms;
+    service.error = result.error;
+    service.checked_at = result.checked_at;
+    service.website = result.website || null;
+    service.network = result.network || null;
+    service.ssl = result.ssl || null;
+    service.security = result.security || null;
+  } catch (error) {
+    service.status = "down";
+    service.http_status = null;
+    service.latency_ms = null;
+    service.error =
+      error instanceof Error
+        ? error.message
+        : "Health check failed.";
+    service.checked_at = new Date().toISOString();
+  } finally {
+    service.checking = false;
+    saveMonitoredServices();
+    renderMonitoredServices();
+  }
+}
+
+async function addMonitoredService() {
+  const name = $("monitor-name").value.trim();
+  const url = $("monitor-url").value.trim();
+
+  if (!name || !url) {
+    showToast("Enter both service name and URL.");
+    return;
+  }
+
+  let parsedUrl;
+
+  try {
+    parsedUrl = new URL(url);
+  } catch (_) {
+    showToast("Enter a valid website or API URL.");
+    return;
+  }
+
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    showToast("Only HTTP and HTTPS URLs are allowed.");
+    return;
+  }
+
+  if (monitoredServices.length >= MAX_MONITORED_SERVICES) {
+    showToast(
+      `Maximum ${MAX_MONITORED_SERVICES} services can be monitored in this browser.`
+    );
+    return;
+  }
+
+  const normalizedUrl = parsedUrl.toString();
+
+  if (
+    monitoredServices.some(
+      (service) => service.url === normalizedUrl
+    )
+  ) {
+    showToast("This URL is already being monitored.");
+    return;
+  }
+
+  const id =
+    window.crypto && typeof window.crypto.randomUUID === "function"
+      ? window.crypto.randomUUID()
+      : `${Date.now()}-${Math.random()
+          .toString(16)
+          .slice(2)}`;
+
+  monitoredServices.push({
+    id,
+    name,
+    url: normalizedUrl,
+    status: "unknown",
+    http_status: null,
+    latency_ms: null,
+    error: null,
+    checked_at: null,
+    checking: false,
+  });
+
+  saveMonitoredServices();
+  renderMonitoredServices();
+
+  $("monitor-name").value = "";
+  $("monitor-url").value = "";
+  $("monitor-form").hidden = true;
+
+  await checkMonitoredService(id);
+}
+
+function removeMonitoredService(id) {
+  monitoredServices = monitoredServices.filter(
+    (service) => service.id !== id
+  );
+
+  saveMonitoredServices();
+  renderMonitoredServices();
+}
+function formatBytes(bytes) {
+  if (typeof bytes !== "number") return "—";
+
+  if (bytes < 1024) {
+    return `${bytes} bytes`;
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(2)} KB`;
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function securityHeaderStatus(security, key) {
+  const item = security?.headers?.[key];
+
+  if (!item) return "Missing";
+
+  return item.present
+    ? "Present"
+    : "Missing";
+}
+
+function showMonitorDetails(id) {
+  const service = monitoredServices.find(
+    (item) => item.id === id
+  );
+
+  if (!service) return;
+
+  if (
+    !service.website ||
+    !service.network ||
+    !service.ssl ||
+    !service.security
+  ) {
+    showToast("Run Check Now first to load full website details.");
+    return;
+  }
+
+  const website = service.website || {};
+  const network = service.network || {};
+  const ssl = service.ssl || {};
+  const security = service.security || {};
+
+  $("monitor-details-name").textContent =
+    `${service.name} — Website Intelligence`;
+
+  $("monitor-details-url").textContent =
+    service.url;
+
+  $("detail-status").textContent =
+    (service.status || "unknown").toUpperCase();
+
+  $("detail-http").textContent =
+    service.http_status ?? "—";
+
+  $("detail-latency").textContent =
+    typeof service.latency_ms === "number"
+      ? `${service.latency_ms.toFixed(2)} ms`
+      : "—";
+
+  $("detail-checked").textContent =
+    service.checked_at
+      ? new Date(service.checked_at).toLocaleString()
+      : "—";
+
+  $("detail-title").textContent =
+    website.page_title || "—";
+
+  $("detail-domain").textContent =
+    website.domain || "—";
+
+  $("detail-protocol").textContent =
+    website.protocol || "—";
+
+  $("detail-hosting").textContent =
+    website.hosting_hint || "Unknown";
+
+  $("detail-content-type").textContent =
+    website.content_type || "—";
+
+  $("detail-size").textContent =
+    formatBytes(website.response_size_bytes);
+
+  $("detail-redirects").textContent =
+    website.redirect_count ?? "—";
+
+  $("detail-final-url").textContent =
+    website.final_url || "—";
+
+  $("detail-ssl-enabled").textContent =
+    ssl.enabled ? "Yes" : "No";
+
+  $("detail-ssl-valid").textContent =
+    ssl.valid ? "Valid" : "Invalid / unavailable";
+
+  $("detail-ssl-issuer").textContent =
+    ssl.issuer || "—";
+
+  $("detail-ssl-subject").textContent =
+    ssl.subject || "—";
+
+  $("detail-ssl-expiry").textContent =
+    ssl.expires_at
+      ? new Date(ssl.expires_at).toLocaleString()
+      : "—";
+
+  $("detail-ssl-days").textContent =
+    ssl.days_until_expiry ?? "—";
+
+  $("detail-ips").textContent =
+    Array.isArray(network.resolved_ips) &&
+    network.resolved_ips.length
+      ? network.resolved_ips.join(", ")
+      : "—";
+
+  $("detail-security-score").textContent =
+    `${security.score ?? 0} / ${security.total ?? 0}`;
+
+  $("detail-hsts").textContent =
+    securityHeaderStatus(
+      security,
+      "strict_transport_security"
+    );
+
+  $("detail-csp").textContent =
+    securityHeaderStatus(
+      security,
+      "content_security_policy"
+    );
+
+  $("detail-content-options").textContent =
+    securityHeaderStatus(
+      security,
+      "x_content_type_options"
+    );
+
+  $("detail-frame-options").textContent =
+    securityHeaderStatus(
+      security,
+      "x_frame_options"
+    );
+
+  $("detail-referrer").textContent =
+    securityHeaderStatus(
+      security,
+      "referrer_policy"
+    );
+
+  $("detail-permissions").textContent =
+    securityHeaderStatus(
+      security,
+      "permissions_policy"
+    );
+
+  $("monitor-details").hidden = false;
+
+  $("monitor-details").scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+async function refreshAllMonitoredServices() {
+  await Promise.allSettled(
+    monitoredServices.map((service) =>
+      checkMonitoredService(service.id)
+    )
+  );
+}
 /* ---------------- boot ---------------- */
 
 function startClock() {
@@ -772,8 +1245,84 @@ async function boot() {
   }
 }
 
-$("btn-normal").addEventListener("click", () => runDemoAnalysis("normal"));
-$("btn-incident").addEventListener("click", () => runDemoAnalysis("anomalous"));
-$("btn-simulate").addEventListener("click", runSimulation);
+$("btn-normal").addEventListener(
+  "click",
+  () => runDemoAnalysis("normal")
+);
+
+$("btn-incident").addEventListener(
+  "click",
+  () => runDemoAnalysis("anomalous")
+);
+
+$("btn-simulate").addEventListener(
+  "click",
+  runSimulation
+);
+
+$("btn-add-monitor").addEventListener(
+  "click",
+  () => {
+    $("monitor-form").hidden = false;
+    $("monitor-name").focus();
+  }
+);
+
+$("btn-cancel-monitor").addEventListener(
+  "click",
+  () => {
+    $("monitor-form").hidden = true;
+    $("monitor-name").value = "";
+    $("monitor-url").value = "";
+  }
+);
+
+$("btn-save-monitor").addEventListener(
+  "click",
+  addMonitoredService
+);
+
+$("monitor-grid").addEventListener(
+  "click",
+  (event) => {
+    const button = event.target.closest(
+      "button[data-action]"
+    );
+
+    if (!button) return;
+
+    const id = button.dataset.id;
+
+   if (button.dataset.action === "check") {
+  checkMonitoredService(id);
+}
+
+if (button.dataset.action === "details") {
+  showMonitorDetails(id);
+}
+
+if (button.dataset.action === "remove") {
+  removeMonitoredService(id);
+}
+  }
+);
+$("btn-close-monitor-details").addEventListener(
+  "click",
+  () => {
+    $("monitor-details").hidden = true;
+  }
+);
+$("btn-close-monitor-details").addEventListener(
+  "click",
+  () => {
+    $("monitor-details").hidden = true;
+  }
+);
+
+loadMonitoredServices();
+renderMonitoredServices();
+
+boot();
+refreshAllMonitoredServices();
 
 boot();

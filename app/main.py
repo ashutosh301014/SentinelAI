@@ -32,6 +32,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from pydantic import BaseModel, Field
 
 # Self-contained entrypoint: `python app/main.py` must find the package
 # without a separate PYTHONPATH export.
@@ -59,6 +60,12 @@ from app.schemas import (
     SimulateRecoveryRequest,
     SimulateRecoveryResponse,
 )
+from app.service_monitor import check_service
+
+
+class ServiceMonitorRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    url: str = Field(min_length=1, max_length=2048)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -275,7 +282,17 @@ def api_index() -> dict:
         ],
     }
 
+@app.post(f"{settings.api_prefix}/service-monitor/check")
+async def service_monitor_check(payload: ServiceMonitorRequest) -> dict:
+    try:
+        result = await check_service(payload.url)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    return {
+        "name": payload.name.strip(),
+        **result,
+    }
 @app.get(f"{settings.api_prefix}/health", response_model=HealthResponse)
 def health(request: Request) -> HealthResponse:
     metadata = request.app.state.pipeline.metadata

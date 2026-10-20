@@ -68,6 +68,253 @@
         <div class="kv-row"><dt>Trained at</dt><dd id="model-trained" class="value">&mdash;</dd></div>
       </dl>
     </section>
+        <!-- LIVE SERVICE MONITOR -->
+    <section class="panel span-12" id="panel-live-monitor">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div>
+          <h2 class="panel-title">Live Service Monitor</h2>
+          <p class="meta-line">
+            Monitor any public website or API for availability and response time.
+            Services are saved only in this browser.
+          </p>
+        </div>
+
+        <button id="btn-add-monitor" class="btn btn-primary" type="button">
+          + Add Service to Monitor
+        </button>
+      </div>
+
+      <div id="monitor-form" style="margin-top:18px;" hidden>
+        <div class="sim-controls">
+
+          <label class="field">
+            <span class="field-label">Service Name</span>
+            <input
+              id="monitor-name"
+              type="text"
+              maxlength="80"
+              placeholder="e.g. CampusConnect"
+            >
+          </label>
+
+          <label class="field" style="min-width:320px;flex:1;">
+            <span class="field-label">Website / API URL</span>
+            <input
+              id="monitor-url"
+              type="url"
+              maxlength="2048"
+              placeholder="https://example.com"
+            >
+          </label>
+
+          <button id="btn-save-monitor" class="btn btn-primary" type="button">
+            Add & Monitor
+          </button>
+
+          <button id="btn-cancel-monitor" class="btn btn-outline" type="button">
+            Cancel
+          </button>
+
+        </div>
+      </div>
+
+      <div id="monitor-empty" class="meta-line" style="margin-top:20px;">
+        No services added yet.
+      </div>
+
+      <div id="monitor-grid" class="atrisk-grid" style="margin-top:20px;"></div>
+          <!-- FULL WEBSITE INTELLIGENCE -->
+      <div id="monitor-details" style="margin-top:24px;" hidden>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;">
+          <div>
+            <h2 id="monitor-details-name" class="panel-title">
+              Website Intelligence
+            </h2>
+
+            <p id="monitor-details-url" class="meta-line"></p>
+          </div>
+
+          <button
+            id="btn-close-monitor-details"
+            class="btn btn-outline"
+            type="button"
+          >
+            Close Details
+          </button>
+        </div>
+
+        <div class="metrics-sub" style="margin-top:20px;">
+
+          <!-- OVERVIEW -->
+          <div class="sub-box">
+            <h3>Overview</h3>
+
+            <dl class="kv">
+              <div class="kv-row">
+                <dt>Status</dt>
+                <dd id="detail-status" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>HTTP Status</dt>
+                <dd id="detail-http" class="value mono">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Response Time</dt>
+                <dd id="detail-latency" class="value mono">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Last Checked</dt>
+                <dd id="detail-checked" class="value">—</dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- WEBSITE -->
+          <div class="sub-box">
+            <h3>Website Information</h3>
+
+            <dl class="kv">
+              <div class="kv-row">
+                <dt>Page Title</dt>
+                <dd id="detail-title" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Domain</dt>
+                <dd id="detail-domain" class="value mono">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Protocol</dt>
+                <dd id="detail-protocol" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Hosting</dt>
+                <dd id="detail-hosting" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Content Type</dt>
+                <dd id="detail-content-type" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Response Size</dt>
+                <dd id="detail-size" class="value mono">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Redirects</dt>
+                <dd id="detail-redirects" class="value mono">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Final URL</dt>
+                <dd id="detail-final-url" class="value mono">—</dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- SSL -->
+          <div class="sub-box">
+            <h3>SSL / TLS</h3>
+
+            <dl class="kv">
+              <div class="kv-row">
+                <dt>HTTPS Enabled</dt>
+                <dd id="detail-ssl-enabled" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Certificate Valid</dt>
+                <dd id="detail-ssl-valid" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Issuer</dt>
+                <dd id="detail-ssl-issuer" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Subject</dt>
+                <dd id="detail-ssl-subject" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Expires</dt>
+                <dd id="detail-ssl-expiry" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Days Remaining</dt>
+                <dd id="detail-ssl-days" class="value mono">—</dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- NETWORK -->
+          <div class="sub-box">
+            <h3>Network</h3>
+
+            <dl class="kv">
+              <div class="kv-row">
+                <dt>Resolved IP Addresses</dt>
+                <dd id="detail-ips" class="value mono">—</dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- SECURITY -->
+          <div class="sub-box">
+            <h3>Security Headers</h3>
+
+            <dl class="kv">
+              <div class="kv-row">
+                <dt>Security Score</dt>
+                <dd id="detail-security-score" class="value mono">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>HSTS</dt>
+                <dd id="detail-hsts" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Content Security Policy</dt>
+                <dd id="detail-csp" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>X-Content-Type-Options</dt>
+                <dd id="detail-content-options" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>X-Frame-Options</dt>
+                <dd id="detail-frame-options" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Referrer Policy</dt>
+                <dd id="detail-referrer" class="value">—</dd>
+              </div>
+
+              <div class="kv-row">
+                <dt>Permissions Policy</dt>
+                <dd id="detail-permissions" class="value">—</dd>
+              </div>
+            </dl>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
 
     <section class="panel span-6" id="panel-risk">
       <h2 class="panel-title">Current Incident Risk</h2>
